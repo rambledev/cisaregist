@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { registrationSchema } from '@/lib/types'
+import { ZodError } from 'zod'
 
 export async function POST(request: Request) {
   try {
@@ -47,12 +48,12 @@ export async function POST(request: Request) {
       }
     }, { status: 201 })
     
-  } catch (error: any) {
+  } catch (error) {
     console.error('Registration error:', error)
     
-    if (error.name === 'ZodError') {
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'ข้อมูลไม่ถูกต้อง', details: error.errors },
+        { error: 'ข้อมูลไม่ถูกต้อง', details: error.issues },
         { status: 400 }
       )
     }
