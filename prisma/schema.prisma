@@ -1,0 +1,47 @@
+// RegisCISA - Registration System Schema
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Registration {
+  id                  String  @id @default(cuid())
+  sequence           Int     @unique @default(autoincrement())
+  
+  // ชื่อ-สกุล ไทย
+  firstNameTh        String
+  lastNameTh         String
+  
+  // ชื่อ-สกุล อังกฤษ
+  firstNameEn        String
+  lastNameEn         String
+  
+  // คำนำหน้า
+  prefix             String  // นาย, นาง, นางสาว
+  
+  // เอกสารส่วนตัว
+  nationalId         String  @unique
+  email              String  @unique
+  phoneNumber        String
+  
+  // ข้อมูลการศึกษา/งาน - CISA specific
+  faculty            String
+  department         String
+  academicPosition   String  // อาจารย์, ผู้ช่วยศาสตราจารย์, รองศาสตราจารย์, ศาสตราจารย์
+  administrativePosition String? // ตำแหน่งบริหาร (อาจจะไม่มี)
+  
+  // สถานะการลงทะเบียน
+  status             String  @default("pending") // pending, approved, rejected
+  
+  // ข้อมูลการสร้าง/แก้ไข
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  @@map("cisa_registrations")
+}
