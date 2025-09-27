@@ -6,32 +6,67 @@ import jwt from 'jsonwebtoken'
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 export async function POST(request: Request) {
+  console.log('🚀 Login API endpoint called')
+  console.log('📅 Timestamp:', new Date().toISOString())
+  console.log('🌍 Environment:', process.env.NODE_ENV)
+  console.log('🔑 JWT_SECRET exists:', !!process.env.JWT_SECRET)
+  
   try {
-    const { username, password } = await request.json()
+    console.log('📥 Parsing request body...')
+    const body = await request.json()
+    console.log('📝 Request body received:', { 
+      username: body.username, 
+      password: body.password ? '***' : 'missing',
+      hasUsername: !!body.username,
+      hasPassword: !!body.password
+    })
+
+    const { username, password } = body
 
     if (!username || !password) {
+      console.log('❌ Missing credentials')
       return NextResponse.json(
         { error: 'กรุณาใส่ชื่อผู้ใช้และรหัสผ่าน' },
         { status: 400 }
       )
     }
 
-    // Find admin user (เปลี่ยนเป็นชื่อ table ที่ถูกต้อง)
+    // Find admin user
+    console.log('🔍 Searching for admin user:', username)
     const admin = await prisma.admin.findUnique({
       where: { username }
     })
 
-    if (!admin || !admin.isActive) {
+    console.log('👤 Admin search result:', {
+      found: !!admin,
+      isActive: admin?.isActive,
+      id: admin?.id,
+      role: admin?.role
+    })
+
+    if (!admin) {
+      console.log('❌ Admin user not found')
       return NextResponse.json(
         { error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' },
         { status: 401 }
       )
     }
 
+    if (!admin.isActive) {
+      console.log('❌ Admin user is not active')
+      return NextResponse.json(
+        { error: 'บัญชีผู้ใช้ถูกระงับ' },
+        { status: 401 }
+      )
+    }
+
     // Verify password
+    console.log('🔐 Verifying password...')
     const isValidPassword = await bcrypt.compare(password, admin.password)
+    console.log('🔐 Password verification result:', isValidPassword)
 
     if (!isValidPassword) {
+      console.log('❌ Invalid password')
       return NextResponse.json(
         { error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' },
         { status: 401 }
@@ -39,24 +74,31 @@ export async function POST(request: Request) {
     }
 
     // Update last login
-    await prisma.admin.update({
-      where: { id: admin.id },
-      data: { lastLogin: new Date() }
-    })
+    console.log('📝 Updating last login time...')
+    try {
+      await prisma.admin.update({
+        where: { id: admin.id },
+        data: { lastLogin: new Date() }
+      })
+      console.log('✅ Last login time updated')
+    } catch (updateError) {
+      console.error('⚠️ Warning: Failed to update last login:', updateError)
+    }
 
     // Create JWT token
-    const token = jwt.sign(
-      { 
-        adminId: admin.id, 
-        username: admin.username, 
-        role: admin.role 
-      },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    )
+    console.log('🎫 Creating JWT token...')
+    const tokenPayload = { 
+      adminId: admin.id, 
+      username: admin.username, 
+      role: admin.role 
+    }
+    console.log('🎫 Token payload:', tokenPayload)
 
-    // Set HTTP-only cookie
-    const response = NextResponse.json({
+    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '24h' })
+    console.log('✅ JWT token created successfully')
+
+    // Prepare response
+    const responseData = {
       message: 'เข้าสู่ระบบสำเร็จ',
       admin: {
         id: admin.id,
@@ -65,29 +107,52 @@ export async function POST(request: Request) {
         email: admin.email,
         role: admin.role
       }
-    })
+    }
+    console.log('📤 Response data prepared:', responseData)
+
+    // Set cookie
+    console.log('🍪 Setting cookie...')
+    const response = NextResponse.json(responseData)
 
     response.cookies.set('admin-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60 // 24 hours
+      maxAge: 24 * 60 * 60, // 24 hours
+      path: '/'
     })
+    console.log('✅ Cookie set successfully')
 
+    console.log('🎉 Login successful!')
     return response
 
   } catch (error) {
-    console.error('Login error:', error)
+    console.error('💥 Unexpected error in login API:', error)
+    console.error('📍 Error details:', error instanceof Error ? error.message : String(error))
+    
     return NextResponse.json(
-      { error: 'เกิดข้อผิดพลาดในระบบ' },
+      { 
+        error: 'เกิดข้อผิดพลาดในระบบ',
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+      },
       { status: 500 }
     )
   }
 }
 
 export async function DELETE() {
-  // Logout endpoint
-  const response = NextResponse.json({ message: 'ออกจากระบบสำเร็จ' })
-  response.cookies.delete('admin-token')
-  return response
+  console.log('🚪 Logout API endpoint called')
+  
+  try {
+    const response = NextResponse.json({ message: 'ออกจากระบบสำเร็จ' })
+    response.cookies.delete('admin-token')
+    console.log('✅ Logout successful')
+    return response
+  } catch (error) {
+    console.error('❌ Error during logout:', error)
+    return NextResponse.json(
+      { error: 'เกิดข้อผิดพลาดในการออกจากระบบ' },
+      { status: 500 }
+    )
+  }
 }
