@@ -161,19 +161,13 @@ export default function AdminLogin() {
           </form>
 
           {/* Default Credentials Info */}
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-sm text-blue-800">
-              <strong>ข้อมูลเข้าสู่ระบบเริ่มต้น:</strong><br />
-              ชื่อผู้ใช้: admin<br />
-              รหัสผ่าน: Admin@2024
-            </p>
-          </div>
+          
         </div>
 
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500">
-            ระบบลงทะเบียน CISA © 2025
+            ระบบลงทะเบียน CISA © 2025 
           </p>
         </div>
       </div>
