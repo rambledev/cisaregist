@@ -30,12 +30,19 @@ export default function AdminLogin() {
   // เช็คว่า login อยู่แล้วหรือไม่
   useEffect(() => {
     const checkAuth = async () => {
+      console.log('🔍 Checking existing authentication...')
       try {
         const response = await fetch('/api/auth/verify')
+        console.log('✅ Auth check response status:', response.status)
+        
         if (response.ok) {
+          console.log('✅ User already authenticated, redirecting to dashboard')
           router.push('/admin/dashboard')
+        } else {
+          console.log('ℹ️ User not authenticated, staying on login page')
         }
       } catch (error) {
+        console.log('❌ Auth check failed:', error)
         // ไม่ได้ login อยู่ ให้อยู่หน้า login
       }
     }
@@ -43,10 +50,20 @@ export default function AdminLogin() {
   }, [router])
 
   const onSubmit = async (data: LoginFormData) => {
+    console.log('🚀 Login attempt started')
+    console.log('📝 Form data:', { username: data.username, password: '***' })
+    console.log('🌍 Current URL:', typeof window !== 'undefined' ? window.location.href : 'N/A')
+    console.log('🔧 Form submission triggered')
+    
     setIsLoading(true)
     setError('')
 
     try {
+      console.log('📡 Preparing fetch request...')
+      console.log('📡 Sending login request to /api/auth/login')
+      console.log('📡 Request body:', JSON.stringify({ username: data.username, password: '***' }))
+      
+      const fetchStart = Date.now()
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -54,20 +71,152 @@ export default function AdminLogin() {
         },
         body: JSON.stringify(data),
       })
+      const fetchEnd = Date.now()
 
-      const result = await response.json()
+      console.log('📥 Login response received')
+      console.log('⏱️ Fetch time:', fetchEnd - fetchStart, 'ms')
+      console.log('📊 Response status:', response.status)
+      console.log('📊 Response ok:', response.ok)
+      console.log('📊 Response type:', response.type)
+      console.log('📊 Response url:', response.url)
+      console.log('📊 Response headers:', Object.fromEntries(response.headers.entries()))
+
+      let result
+      let rawText = ''
+      try {
+        rawText = await response.text()
+        console.log('📄 Raw response text:', rawText)
+        result = JSON.parse(rawText)
+        console.log('📄 Parsed response body:', result)
+      } catch (parseError) {
+        console.error('❌ Failed to parse response as JSON:', parseError)
+        console.log('📄 Raw response length:', rawText.length)
+        console.log('📄 Raw response preview:', rawText.substring(0, 200))
+        throw new Error(`Invalid JSON response from server. Raw: ${rawText.substring(0, 100)}`)
+      }
 
       if (response.ok) {
+        console.log('✅ Login successful!')
+        console.log('👤 Admin info:', result.admin)
+        
+        if (typeof window !== 'undefined') {
+          console.log('🍪 Document cookies before:', document.cookie)
+          console.log('🍪 Response headers Set-Cookie:', response.headers.get('set-cookie'))
+          
+          // Try to extract token from response and set manually
+          const setCookieHeader = response.headers.get('set-cookie')
+          if (setCookieHeader) {
+            const tokenMatch = setCookieHeader.match(/admin-token=([^;]+)/)
+            if (tokenMatch) {
+              const token = tokenMatch[1]
+              console.log('🍪 Extracted token:', token.substring(0, 20) + '...')
+              
+              // Set cookie manually as fallback
+              document.cookie = `admin-token=${token}; path=/; max-age=86400; SameSite=Lax`
+              console.log('🍪 Manually set cookie')
+            }
+          }
+          
+          // เช็ค cookies หลังจากได้ response
+          setTimeout(() => {
+            console.log('🍪 Document cookies after 100ms:', document.cookie)
+            console.log('🍪 Available cookies:', document.cookie.split(';').map(c => c.trim()))
+          }, 100)
+          
+          setTimeout(() => {
+            console.log('🍪 Document cookies after 500ms:', document.cookie)
+          }, 500)
+        }
+        
         // Login สำเร็จ redirect ไป dashboard
-        router.push('/admin/dashboard')
-        router.refresh() // Refresh เพื่อให้ middleware ทำงาน
+        console.log('🔄 Redirecting to dashboard...')
+        
+        // ลองรอให้ cookie set ก่อน redirect
+        setTimeout(() => {
+          router.push('/admin/dashboard')
+          router.refresh()
+        }, 1000) // รอ 1 วินาที
       } else {
+        console.log('❌ Login failed with status:', response.status)
+        console.log('❌ Login failed with error:', result.error)
         setError(result.error || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ')
       }
-    } catch {
-      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ')
+    } catch (error) {
+      console.error('❌ Network/Fetch error during login:', error)
+      console.error('❌ Error type:', typeof error)
+      console.error('❌ Error constructor:', (error as any)?.constructor?.name)
+      if (error instanceof Error) {
+        console.error('❌ Error message:', error.message)
+        console.error('❌ Error stack:', error.stack)
+      }
+      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (error instanceof Error ? error.message : String(error)))
     } finally {
+      console.log('🏁 Login attempt finished')
       setIsLoading(false)
+    }
+  }
+
+  const testDirectLogin = async () => {
+    console.log('🧪 Testing direct login...')
+    try {
+      const testData = { username: 'admin', password: 'admin123' } // ใส่ username/password จริง
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(testData),
+      })
+      console.log('📡 Direct Login Response:', response.status, response.statusText)
+      console.log('🍪 Response Set-Cookie header:', response.headers.get('set-cookie'))
+      const data = await response.text()
+      console.log('📄 Direct Login Data:', data)
+      
+      // Check cookies immediately
+      if (typeof window !== 'undefined') {
+        console.log('🍪 Cookies after login:', document.cookie)
+      }
+      
+      alert(`Login test: ${response.status} - Check console for cookie details`)
+    } catch (error) {
+      console.error('❌ Direct Login Error:', error)
+      alert('Direct login test failed: ' + (error instanceof Error ? error.message : String(error)))
+    }
+  }
+
+  const checkCookies = () => {
+    if (typeof window !== 'undefined') {
+      console.log('🍪 Current cookies:', document.cookie)
+      console.log('🍪 Cookie breakdown:', document.cookie.split(';').map(c => c.trim()))
+      alert('Current cookies: ' + document.cookie)
+    } else {
+      alert('Window not available')
+    }
+  }
+
+  const testVerifyAPI = async () => {
+    console.log('🧪 Testing API accessibility...')
+    try {
+      const response = await fetch('/api/auth/verify')
+      console.log('📡 Verify API Response:', response.status, response.statusText)
+      const data = await response.text()
+      console.log('📄 Verify API Data:', data)
+    } catch (error) {
+      console.error('❌ Verify API Error:', error)
+    }
+  }
+
+  const testHealthCheck = async () => {
+    console.log('🏥 Running health check...')
+    try {
+      const response = await fetch('/api/health')
+      console.log('🏥 Health Check Response:', response.status, response.statusText)
+      const data = await response.json()
+      console.log('🏥 Health Check Data:', data)
+      alert(`Health Status: ${data.status}\nDB: ${data.checks.database}\nJWT: ${data.checks.env_variables.JWT_SECRET}`)
+    } catch (error) {
+      console.error('❌ Health Check Error:', error)
+      alert('Health check failed: ' + (error instanceof Error ? error.message : String(error)))
     }
   }
 
@@ -160,8 +309,48 @@ export default function AdminLogin() {
             </button>
           </form>
 
-          {/* Default Credentials Info */}
-          
+          {/* Debug Info */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-md">
+            <p className="text-xs text-gray-600 mb-2">Debug Info:</p>
+            <p className="text-xs text-gray-500">Environment: {process.env.NODE_ENV || 'development'}</p>
+            <p className="text-xs text-gray-500">Current URL: {typeof window !== 'undefined' ? window.location.href : 'N/A'}</p>
+            <p className="text-xs text-gray-500">User Agent: {typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A'}</p>
+            
+            {/* Test Buttons */}
+            <div className="mt-2 space-x-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={testVerifyAPI}
+                className="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded text-gray-700"
+              >
+                Test Verify API
+              </button>
+              
+              <button
+                type="button"
+                onClick={testHealthCheck}
+                className="px-3 py-1 text-xs bg-blue-200 hover:bg-blue-300 rounded text-blue-700"
+              >
+                Health Check
+              </button>
+              
+              <button
+                type="button"
+                onClick={testDirectLogin}
+                className="px-3 py-1 text-xs bg-green-200 hover:bg-green-300 rounded text-green-700"
+              >
+                Test Direct Login
+              </button>
+              
+              <button
+                type="button"
+                onClick={checkCookies}
+                className="px-3 py-1 text-xs bg-yellow-200 hover:bg-yellow-300 rounded text-yellow-700"
+              >
+                Check Cookies
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}

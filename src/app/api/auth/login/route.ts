@@ -114,13 +114,23 @@ export async function POST(request: Request) {
     console.log('🍪 Setting cookie...')
     const response = NextResponse.json(responseData)
 
-    response.cookies.set('admin-token', token, {
+    // Try different cookie settings for production
+    const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: false, // Try without secure first
+      sameSite: 'lax' as const,
       maxAge: 24 * 60 * 60, // 24 hours
-      path: '/'
-    })
+      path: '/',
+      domain: undefined // Let browser decide
+    }
+    
+    console.log('🍪 Cookie options:', cookieOptions)
+    response.cookies.set('admin-token', token, cookieOptions)
+    
+    // Also try setting via Set-Cookie header
+    response.headers.set('Set-Cookie', 
+      `admin-token=${token}; Path=/; Max-Age=${24 * 60 * 60}; HttpOnly; SameSite=Lax`
+    )
     console.log('✅ Cookie set successfully')
 
     console.log('🎉 Login successful!')
