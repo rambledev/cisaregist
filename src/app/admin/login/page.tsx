@@ -309,48 +309,7 @@ export default function AdminLogin() {
             </button>
           </form>
 
-          {/* Debug Info */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-md">
-            <p className="text-xs text-gray-600 mb-2">Debug Info:</p>
-            <p className="text-xs text-gray-500">Environment: {process.env.NODE_ENV || 'development'}</p>
-            <p className="text-xs text-gray-500">Current URL: {typeof window !== 'undefined' ? window.location.href : 'N/A'}</p>
-            <p className="text-xs text-gray-500">User Agent: {typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A'}</p>
-            
-            {/* Test Buttons */}
-            <div className="mt-2 space-x-2 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={testVerifyAPI}
-                className="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded text-gray-700"
-              >
-                Test Verify API
-              </button>
-              
-              <button
-                type="button"
-                onClick={testHealthCheck}
-                className="px-3 py-1 text-xs bg-blue-200 hover:bg-blue-300 rounded text-blue-700"
-              >
-                Health Check
-              </button>
-              
-              <button
-                type="button"
-                onClick={testDirectLogin}
-                className="px-3 py-1 text-xs bg-green-200 hover:bg-green-300 rounded text-green-700"
-              >
-                Test Direct Login
-              </button>
-              
-              <button
-                type="button"
-                onClick={checkCookies}
-                className="px-3 py-1 text-xs bg-yellow-200 hover:bg-yellow-300 rounded text-yellow-700"
-              >
-                Check Cookies
-              </button>
-            </div>
-          </div>
+          
         </div>
 
         {/* Footer */}

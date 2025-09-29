@@ -7,7 +7,7 @@ async function createAdmin() {
   try {
     const username = 'admin'
     const password = 'admin55'
-    const email = 'admin@cisa.rmu.ac.th'
+    const email = 'admin@cisa.rmu'
     const name = 'System Administrator'
 
     // Hash password
@@ -35,8 +35,7 @@ async function createAdmin() {
         password: hashedPassword,
         email,
         name,
-        role: 'admin',
-        isActive: true
+        role: 'admin'
       }
     })
 

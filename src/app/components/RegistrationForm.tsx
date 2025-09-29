@@ -1,14 +1,14 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { 
   RegistrationFormData, 
   registrationSchema,
   prefixOptions,
-  faculties,
-  academicPositions
+  academicPositions,
+  roles
 } from '@/lib/types'
 import {
   Select,
@@ -19,12 +19,35 @@ import {
 } from '@/app/components/ui/select'
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 
+interface Department {
+  id: string
+  code: string
+  name: string
+  degree: string
+  duration: string | null
+  specializations: string[]
+}
+
+interface Faculty {
+  id: string
+  name: string
+  departments: Department[]
+}
+
 export default function RegistrationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<{
     type: 'success' | 'error' | null
     message: string
   }>({ type: null, message: '' })
+  const [selectedRole, setSelectedRole] = useState<string>('')
+  
+  // States สำหรับคณะและสาขา
+  const [faculties, setFaculties] = useState<Faculty[]>([])
+  const [selectedFaculty, setSelectedFaculty] = useState<string>('')
+  const [availableDepartments, setAvailableDepartments] = useState<Department[]>([])
+  const [isLoadingFaculties, setIsLoadingFaculties] = useState(true)
+  const [showDepartmentWarning, setShowDepartmentWarning] = useState(false)
 
   const {
     register,
@@ -36,12 +59,78 @@ export default function RegistrationForm() {
     resolver: zodResolver(registrationSchema)
   })
 
+  // ดึงข้อมูลคณะเมื่อ component mount
+  useEffect(() => {
+    fetchFaculties()
+  }, [])
+
+  const fetchFaculties = async () => {
+    try {
+      setIsLoadingFaculties(true)
+      const response = await fetch('/api/faculties')
+      const result = await response.json()
+      
+      if (result.success) {
+        setFaculties(result.data)
+      } else {
+        setSubmitStatus({
+          type: 'error',
+          message: 'ไม่สามารถโหลดข้อมูลคณะได้'
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching faculties:', error)
+      setSubmitStatus({
+        type: 'error',
+        message: 'เกิดข้อผิดพลาดในการโหลดข้อมูลคณะ'
+      })
+    } finally {
+      setIsLoadingFaculties(false)
+    }
+  }
+
+  const handleFacultyChange = (facultyId: string) => {
+    setSelectedFaculty(facultyId)
+    setShowDepartmentWarning(false)
+    
+    // หาคณะที่เลือกและดึงสาขาของคณะนั้น
+    const faculty = faculties.find(f => f.id === facultyId)
+    if (faculty) {
+      setAvailableDepartments(faculty.departments)
+      setValue('faculty', faculty.name)
+    } else {
+      setAvailableDepartments([])
+    }
+    
+    // Reset department เมื่อเปลี่ยนคณะ
+    setValue('department', '')
+  }
+
+  const handleDepartmentClick = () => {
+    if (!selectedFaculty) {
+      setShowDepartmentWarning(true)
+      setTimeout(() => setShowDepartmentWarning(false), 3000)
+    }
+  }
+
+  const handleDepartmentChange = (departmentId: string) => {
+    const department = availableDepartments.find(d => d.id === departmentId)
+    if (department) {
+      setValue('department', department.name)
+    }
+  }
+
   const onSubmit = async (data: RegistrationFormData) => {
+    console.log('=== Form Submit Started ===')
+    console.log('Form data:', data)
+    
     setIsSubmitting(true)
     setSubmitStatus({ type: null, message: '' })
 
     try {
-      const response = await fetch('/api/registration', {
+      console.log('Sending POST to /api/registrations...')
+      
+      const response = await fetch('/api/registrations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -49,7 +138,11 @@ export default function RegistrationForm() {
         body: JSON.stringify(data),
       })
 
+      console.log('Response status:', response.status)
+      console.log('Response ok:', response.ok)
+      
       const result = await response.json()
+      console.log('Response body:', result)
 
       if (response.ok) {
         setSubmitStatus({
@@ -57,6 +150,9 @@ export default function RegistrationForm() {
           message: `ลงทะเบียนสำเร็จ! หมายเลขลำดับของคุณคือ ${result.data.sequence}`
         })
         reset()
+        setSelectedRole('')
+        setSelectedFaculty('')
+        setAvailableDepartments([])
       } else {
         setSubmitStatus({
           type: 'error',
@@ -64,13 +160,21 @@ export default function RegistrationForm() {
         })
       }
     } catch (error) {
+      console.error('=== Submit Error ===')
+      console.error('Error:', error)
       setSubmitStatus({
         type: 'error',
         message: 'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง'
       })
     } finally {
+      console.log('=== Form Submit Ended ===')
       setIsSubmitting(false)
     }
+  }
+
+  const handleRoleChange = (value: string) => {
+    setSelectedRole(value)
+    setValue('role', value as RegistrationFormData['role'])
   }
 
   return (
@@ -80,7 +184,7 @@ export default function RegistrationForm() {
         <div className="text-center mb-8">
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              ระบบลงทะเบียน CISA
+              ระบบลงทะเบียนเข้าใช้ระบบสารสนเทศฐานข้อมูลหลักสูตร (CISA)
             </h1>
             <p className="text-gray-600">
               กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง
@@ -104,6 +208,14 @@ export default function RegistrationForm() {
           </div>
         )}
 
+        {/* Department Warning */}
+        {showDepartmentWarning && (
+          <div className="mb-6 p-4 rounded-lg flex items-center gap-3 bg-yellow-50 border border-yellow-200 text-yellow-800">
+            <AlertCircle className="h-5 w-5" />
+            <p>กรุณาเลือกคณะก่อน</p>
+          </div>
+        )}
+
         {/* Form */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -120,7 +232,7 @@ export default function RegistrationForm() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     คำนำหน้า <span className="text-red-500">*</span>
                   </label>
-                  <Select onValueChange={(value) => setValue('prefix', value as any)}>
+                  <Select onValueChange={(value) => setValue('prefix', value as RegistrationFormData['prefix'])}>
                     <SelectTrigger>
                       <SelectValue placeholder="เลือกคำนำหน้า" />
                     </SelectTrigger>
@@ -257,10 +369,10 @@ export default function RegistrationForm() {
               </div>
             </div>
 
-            {/* ส่วนข้อมูลการศึกษา/งาน */}
+            {/* ส่วนข้อมูลสังกัด */}
             <div>
               <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
-                ข้อมูลการศึกษาและงาน
+                ข้อมูลสังกัด
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -269,14 +381,19 @@ export default function RegistrationForm() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     คณะ <span className="text-red-500">*</span>
                   </label>
-                  <Select onValueChange={(value) => setValue('faculty', value)}>
+                  <Select 
+                    onValueChange={handleFacultyChange}
+                    disabled={isLoadingFaculties}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="เลือกคณะ" />
+                      <SelectValue placeholder={
+                        isLoadingFaculties ? "กำลังโหลด..." : "เลือกคณะ"
+                      } />
                     </SelectTrigger>
                     <SelectContent>
                       {faculties.map((faculty) => (
-                        <SelectItem key={faculty.value} value={faculty.value}>
-                          {faculty.label}
+                        <SelectItem key={faculty.id} value={faculty.id}>
+                          {faculty.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -291,14 +408,44 @@ export default function RegistrationForm() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     สาขาวิชา <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    {...register('department')}
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="สาขาวิชา"
-                  />
+                  <Select 
+                    onValueChange={handleDepartmentChange}
+                    disabled={!selectedFaculty || availableDepartments.length === 0}
+                    onOpenChange={(open) => {
+                      if (open) handleDepartmentClick()
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={
+                        !selectedFaculty 
+                          ? "เลือกคณะก่อน" 
+                          : availableDepartments.length === 0
+                          ? "ไม่มีสาขาในคณะนี้"
+                          : "เลือกสาขาวิชา"
+                      } />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableDepartments.map((department) => (
+                        <SelectItem key={department.id} value={department.id}>
+                          <div className="flex flex-col">
+                            <span>{department.name}</span>
+                            <span className="text-xs text-gray-500">
+                              {department.degree} {department.duration && `(${department.duration})`}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {errors.department && (
                     <p className="mt-1 text-sm text-red-600">{errors.department.message}</p>
+                  )}
+                  
+                  {/* แสดงจำนวนสาขา */}
+                  {selectedFaculty && availableDepartments.length > 0 && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      มี {availableDepartments.length} สาขาในคณะนี้
+                    </p>
                   )}
                 </div>
               </div>
@@ -309,7 +456,7 @@ export default function RegistrationForm() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     ตำแหน่งวิชาการ <span className="text-red-500">*</span>
                   </label>
-                  <Select onValueChange={(value) => setValue('academicPosition', value as any)}>
+                  <Select onValueChange={(value) => setValue('academicPosition', value as RegistrationFormData['academicPosition'])}>
                     <SelectTrigger>
                       <SelectValue placeholder="เลือกตำแหน่งวิชาการ" />
                     </SelectTrigger>
@@ -335,9 +482,50 @@ export default function RegistrationForm() {
                     {...register('administrativePosition')}
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="เช่น หัวหน้าสาขา, รองคณบดี"
+                    placeholder="เช่น ประธานหลักสูตร, รองคณบดี"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* ส่วนสิทธิ์ในการเข้าใช้ระบบ */}
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                สิทธิ์ในการเข้าใช้ระบบ
+              </h2>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  บทบาท <span className="text-red-500">*</span>
+                </label>
+                
+                <Select onValueChange={handleRoleChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="เลือกบทบาท" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.value} value={role.value}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{role.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {errors.role && (
+                  <p className="mt-2 text-sm text-red-600">{errors.role.message}</p>
+                )}
+                
+                {/* แสดงบทบาทที่เลือก */}
+                {selectedRole && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-medium">บทบาทที่เลือก:</span> {selectedRole}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

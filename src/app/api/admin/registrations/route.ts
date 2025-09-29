@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         administrativePosition: true,
         nationalId: true,
         prefix: true,
+        role: true, 
         status: true,
         createdAt: true,
         updatedAt: true
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
       email,
       phoneNumber,
       faculty,
+      role,
       department,
       academicPosition,
       administrativePosition,
@@ -123,6 +125,7 @@ export async function POST(request: NextRequest) {
         email,
         phoneNumber,
         faculty,
+        role,
         department,
         academicPosition,
         administrativePosition: administrativePosition || null,

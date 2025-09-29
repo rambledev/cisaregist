@@ -7,6 +7,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Admin {
+  id        String    @id @default(cuid())
+  username  String    @unique
+  password  String
+  email     String    @unique
+  name      String
+  role      String    @default("admin")
+  isActive  Boolean   @default(true) @map("is_active")
+  lastLogin DateTime? @map("last_login") @db.Timestamp(6)
+  createdAt DateTime  @default(now()) @map("createdAt")
+  updatedAt DateTime  @updatedAt @map("updatedAt")
+
+  @@map("cisa_admins")
+}
+
+model Faculty {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  departments Department[]
+
+  @@map("cisa_faculties")
+}
+
+model Department {
+  id              String   @id @default(cuid())
+  facultyId       String   @map("faculty_id")
+  code            String   @unique
+  name            String
+  degree          String
+  duration        String?
+  specializations String[]
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  
+  faculty         Faculty  @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+
+  @@map("cisa_departments")
+}
+
 model Registration {
   id                     String   @id @default(cuid())
   sequence               Int      @unique @default(autoincrement())
@@ -22,24 +63,10 @@ model Registration {
   department             String
   academicPosition       String
   administrativePosition String?
-  status                 String   @default("pending")
+  role                   String
+  status                 String   @default("inactive")
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 
   @@map("cisa_registrations")
-}
-
-model Admin {
-  id        String    @id @default(cuid())
-  username  String    @unique
-  password  String
-  email     String    @unique
-  name      String
-  role      String    @default("admin")
-  isActive  Boolean   @default(true)
-  lastLogin DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  @@map("cisa_admins")
 }

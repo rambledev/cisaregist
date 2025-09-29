@@ -33,19 +33,26 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const navigation: MenuItem[] = [
-    {
-      name: "Dashboard",
-      href: "/admin/dashboard",
-      icon: BarChart3,
-      current: pathname === "/admin/dashboard",
-    },
-    {
-      name: "ข้อมูลการลงทะเบียน",
-      href: "/admin/registrations",
-      icon: Users,
-      current: pathname === "/admin/registrations",
-    },
-  ]
+  {
+    name: "Dashboard",
+    href: "/admin/dashboard",
+    icon: BarChart3,
+    current: pathname === "/admin/dashboard",
+  },
+  {
+    name: "ข้อมูลการลงทะเบียน",
+    href: "/admin/registrations",
+    icon: Users,
+    current: pathname === "/admin/registrations",
+  },
+  {
+    name: "จัดการ คณะ-สาขา",
+    href: "/admin/faculty-programs", // กำหนด path ของหน้าจัดการคณะ-สาขา
+    icon: Shield, // เปลี่ยนไอคอนตามต้องการ
+    current: pathname === "/admin/faculty-programs",
+  },
+]
+
 
   useEffect(() => {
     const verifyAuth = async () => {

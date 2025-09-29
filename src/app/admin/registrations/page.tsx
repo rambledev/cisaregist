@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../components/AdminLayout'
+import { roles } from '@/lib/types'
 import { 
   Users, 
   Plus,
@@ -11,7 +12,8 @@ import {
   Filter,
   X,
   Save,
-  Eye
+  Eye,
+  AlertCircle
 } from 'lucide-react'
 
 interface Registration {
@@ -27,6 +29,7 @@ interface Registration {
   department: string
   academicPosition: string
   administrativePosition?: string
+  role: string
   nationalId: string
   prefix: string
   status: string
@@ -45,8 +48,24 @@ interface RegistrationForm {
   department: string
   academicPosition: string
   administrativePosition: string
+  role: string
   nationalId: string
   prefix: string
+}
+
+interface Department {
+  id: string
+  code: string
+  name: string
+  degree: string
+  duration: string | null
+  specializations: string[]
+}
+
+interface Faculty {
+  id: string
+  name: string
+  departments: Department[]
 }
 
 const initialFormData: RegistrationForm = {
@@ -60,6 +79,7 @@ const initialFormData: RegistrationForm = {
   department: '',
   academicPosition: '',
   administrativePosition: '',
+  role: '',
   nationalId: '',
   prefix: ''
 }
@@ -70,7 +90,7 @@ export default function AdminRegistrations() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedFaculty, setSelectedFaculty] = useState('')
-  const [selectedPosition, setSelectedPosition] = useState('')
+  const [selectedRole, setSelectedRole] = useState('')
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -79,17 +99,41 @@ export default function AdminRegistrations() {
   const [formData, setFormData] = useState<RegistrationForm>(initialFormData)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Faculties and positions for filters
+  // Faculties and roles for filters
   const [faculties, setFaculties] = useState<string[]>([])
-  const [positions, setPositions] = useState<string[]>([])
+  const [rolesList, setRolesList] = useState<string[]>([])
+
+  // Faculty and Department data from database
+  const [facultiesData, setFacultiesData] = useState<Faculty[]>([])
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string>('')
+  const [availableDepartments, setAvailableDepartments] = useState<Department[]>([])
+  const [showDepartmentWarning, setShowDepartmentWarning] = useState(false)
+  const [isLoadingFaculties, setIsLoadingFaculties] = useState(false)
 
   useEffect(() => {
     fetchRegistrations()
+    fetchFacultiesData()
   }, [])
 
   useEffect(() => {
     filterRegistrations()
-  }, [registrations, searchTerm, selectedFaculty, selectedPosition])
+  }, [registrations, searchTerm, selectedFaculty, selectedRole])
+
+  const fetchFacultiesData = async () => {
+    try {
+      setIsLoadingFaculties(true)
+      const response = await fetch('/api/faculties')
+      const result = await response.json()
+      
+      if (result.success) {
+        setFacultiesData(result.data)
+      }
+    } catch (error) {
+      console.error('Error fetching faculties:', error)
+    } finally {
+      setIsLoadingFaculties(false)
+    }
+  }
 
   const fetchRegistrations = async () => {
     try {
@@ -98,11 +142,11 @@ export default function AdminRegistrations() {
         const data = await response.json()
         setRegistrations(data.registrations || [])
         
-        // Extract unique faculties and positions for filters
+        // Extract unique faculties and roles for filters
         const uniqueFaculties = [...new Set(data.registrations?.map((r: Registration) => r.faculty).filter(Boolean) || [])] as string[]
-        const uniquePositions = [...new Set(data.registrations?.map((r: Registration) => r.academicPosition).filter(Boolean) || [])] as string[]
+        const uniqueRoles = [...new Set(data.registrations?.map((r: Registration) => r.role).filter(Boolean) || [])] as string[]
         setFaculties(uniqueFaculties)
-        setPositions(uniquePositions)
+        setRolesList(uniqueRoles)
       }
     } catch (error) {
       console.error('Error fetching registrations:', error)
@@ -129,12 +173,36 @@ export default function AdminRegistrations() {
       filtered = filtered.filter(reg => reg.faculty === selectedFaculty)
     }
 
-    // Position filter
-    if (selectedPosition) {
-      filtered = filtered.filter(reg => reg.academicPosition === selectedPosition)
+    // Role filter
+    if (selectedRole) {
+      filtered = filtered.filter(reg => reg.role === selectedRole)
     }
 
     setFilteredRegistrations(filtered)
+  }
+
+  const handleStatusToggle = async (registration: Registration) => {
+    const newStatus = registration.status === 'active' ? 'inactive' : 'active'
+    
+    try {
+      const response = await fetch(`/api/registrations/${registration.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      if (response.ok) {
+        await fetchRegistrations()
+      } else {
+        console.error('Failed to update status')
+        alert('เกิดข้อผิดพลาดในการอัปเดตสถานะ')
+      }
+    } catch (error) {
+      console.error('Error updating status:', error)
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ')
+    }
   }
 
   const openModal = (mode: 'add' | 'edit' | 'view', registration?: Registration) => {
@@ -143,6 +211,9 @@ export default function AdminRegistrations() {
     
     if (mode === 'add') {
       setFormData(initialFormData)
+      setSelectedFacultyId('')
+      setAvailableDepartments([])
+      setShowDepartmentWarning(false)
     } else if (registration) {
       setFormData({
         firstNameTh: registration.firstNameTh,
@@ -155,9 +226,17 @@ export default function AdminRegistrations() {
         department: registration.department,
         academicPosition: registration.academicPosition,
         administrativePosition: registration.administrativePosition || '',
+        role: registration.role,
         nationalId: registration.nationalId,
         prefix: registration.prefix
       })
+
+      // หา faculty id และตั้งค่า departments
+      const faculty = facultiesData.find(f => f.name === registration.faculty)
+      if (faculty) {
+        setSelectedFacultyId(faculty.id)
+        setAvailableDepartments(faculty.departments)
+      }
     }
     
     setIsModalOpen(true)
@@ -167,6 +246,43 @@ export default function AdminRegistrations() {
     setIsModalOpen(false)
     setSelectedRegistration(null)
     setFormData(initialFormData)
+    setSelectedFacultyId('')
+    setAvailableDepartments([])
+    setShowDepartmentWarning(false)
+  }
+
+  const handleFacultyChange = (facultyId: string) => {
+    setSelectedFacultyId(facultyId)
+    setShowDepartmentWarning(false)
+    
+    const faculty = facultiesData.find(f => f.id === facultyId)
+    if (faculty) {
+      setAvailableDepartments(faculty.departments)
+      setFormData(prev => ({
+        ...prev,
+        faculty: faculty.name,
+        department: '' // Reset department เมื่อเปลี่ยนคณะ
+      }))
+    } else {
+      setAvailableDepartments([])
+    }
+  }
+
+  const handleDepartmentClick = () => {
+    if (!selectedFacultyId) {
+      setShowDepartmentWarning(true)
+      setTimeout(() => setShowDepartmentWarning(false), 3000)
+    }
+  }
+
+  const handleDepartmentChange = (departmentId: string) => {
+    const department = availableDepartments.find(d => d.id === departmentId)
+    if (department) {
+      setFormData(prev => ({
+        ...prev,
+        department: department.name
+      }))
+    }
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -201,9 +317,11 @@ export default function AdminRegistrations() {
         closeModal()
       } else {
         console.error('Failed to save registration')
+        alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล')
       }
     } catch (error) {
       console.error('Error saving registration:', error)
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ')
     } finally {
       setIsSubmitting(false)
     }
@@ -223,9 +341,11 @@ export default function AdminRegistrations() {
         await fetchRegistrations()
       } else {
         console.error('Failed to delete registration')
+        alert('เกิดข้อผิดพลาดในการลบข้อมูล')
       }
     } catch (error) {
       console.error('Error deleting registration:', error)
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ')
     }
   }
 
@@ -291,16 +411,16 @@ export default function AdminRegistrations() {
               ))}
             </select>
 
-            {/* Position Filter */}
+            {/* Role Filter */}
             <select
-              value={selectedPosition}
-              onChange={(e) => setSelectedPosition(e.target.value)}
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">ทุกตำแหน่ง</option>
-              {positions.map(position => (
-                <option key={position} value={position}>
-                  {position}
+              <option value="">ทุกบทบาท</option>
+              {rolesList.map(role => (
+                <option key={role} value={role}>
+                  {role}
                 </option>
               ))}
             </select>
@@ -310,7 +430,7 @@ export default function AdminRegistrations() {
               onClick={() => {
                 setSearchTerm('')
                 setSelectedFaculty('')
-                setSelectedPosition('')
+                setSelectedRole('')
               }}
               className="px-3 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50"
             >
@@ -328,82 +448,107 @@ export default function AdminRegistrations() {
 
         {/* Table */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ลำดับ
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ชื่อ-นามสกุล
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  อีเมล
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  คณะ
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ตำแหน่ง
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  วันที่ลงทะเบียน
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  จัดการ
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredRegistrations.map((registration) => (
-                <tr key={registration.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    #{registration.sequence}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {registration.prefix} {registration.firstNameTh} {registration.lastNameTh}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {registration.email}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                    {registration.faculty.replace('คณะ', '')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {registration.academicPosition}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(registration.createdAt).toLocaleDateString('th-TH')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => openModal('view', registration)}
-                        className="text-blue-600 hover:text-blue-800"
-                        title="ดูรายละเอียด"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => openModal('edit', registration)}
-                        className="text-green-600 hover:text-green-800"
-                        title="แก้ไข"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(registration)}
-                        className="text-red-600 hover:text-red-800"
-                        title="ลบ"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ลำดับ
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ชื่อ-นามสกุล
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    อีเมล
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    คณะ
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    สิทธิ์การใช้งาน
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    สถานะ
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    วันที่ลงทะเบียน
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    จัดการ
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredRegistrations.map((registration) => (
+                  <tr key={registration.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      #{registration.sequence}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {registration.prefix} {registration.firstNameTh} {registration.lastNameTh}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {registration.email}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                      {registration.faculty.replace('คณะ', '')}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      <div className="max-w-xs truncate" title={registration.role}>
+                        {registration.role}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <button
+                        onClick={() => handleStatusToggle(registration)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                          registration.status === 'active' ? 'bg-green-600' : 'bg-gray-300'
+                        }`}
+                        title={registration.status === 'active' ? 'คลิกเพื่อปิดการใช้งาน' : 'คลิกเพื่อเปิดการใช้งาน'}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            registration.status === 'active' ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                      <div className="mt-1 text-xs text-gray-500">
+                        {registration.status === 'active' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(registration.createdAt).toLocaleDateString('th-TH')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex justify-center space-x-2">
+                        <button
+                          onClick={() => openModal('view', registration)}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="ดูรายละเอียด"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => openModal('edit', registration)}
+                          className="text-green-600 hover:text-green-800"
+                          title="แก้ไข"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(registration)}
+                          className="text-red-600 hover:text-red-800"
+                          title="ลบ"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {filteredRegistrations.length === 0 && (
             <div className="text-center py-8">
@@ -429,6 +574,14 @@ export default function AdminRegistrations() {
                   <X className="h-6 w-6" />
                 </button>
               </div>
+
+              {/* Department Warning */}
+              {showDepartmentWarning && modalMode !== 'view' && (
+                <div className="mb-4 p-3 rounded-lg flex items-center gap-3 bg-yellow-50 border border-yellow-200 text-yellow-800">
+                  <AlertCircle className="h-5 w-5" />
+                  <p className="text-sm">กรุณาเลือกคณะก่อน</p>
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -565,6 +718,7 @@ export default function AdminRegistrations() {
                       disabled={modalMode === 'view'}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
                       required
+                      maxLength={13}
                     />
                   </div>
 
@@ -573,31 +727,75 @@ export default function AdminRegistrations() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       คณะ
                     </label>
-                    <input
-                      type="text"
-                      name="faculty"
-                      value={formData.faculty}
-                      onChange={handleInputChange}
-                      disabled={modalMode === 'view'}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                      required
-                    />
+                    {modalMode === 'view' ? (
+                      <input
+                        type="text"
+                        value={formData.faculty}
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                      />
+                    ) : (
+                      <select
+                        value={selectedFacultyId}
+                        onChange={(e) => handleFacultyChange(e.target.value)}
+                        disabled={isLoadingFaculties}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      >
+                        <option value="">
+                          {isLoadingFaculties ? "กำลังโหลด..." : "เลือกคณะ"}
+                        </option>
+                        {facultiesData.map((faculty) => (
+                          <option key={faculty.id} value={faculty.id}>
+                            {faculty.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
-                  {/* ภาควิชา/สาขา */}
+                  {/* สาขาวิชา */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ภาควิชา/สาขา
+                      สาขาวิชา
                     </label>
-                    <input
-                      type="text"
-                      name="department"
-                      value={formData.department}
-                      onChange={handleInputChange}
-                      disabled={modalMode === 'view'}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                      required
-                    />
+                    {modalMode === 'view' ? (
+                      <input
+                        type="text"
+                        value={formData.department}
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                      />
+                    ) : (
+                      <>
+                        <select
+                          value={availableDepartments.find(d => d.name === formData.department)?.id || ''}
+                          onChange={(e) => handleDepartmentChange(e.target.value)}
+                          disabled={!selectedFacultyId || availableDepartments.length === 0}
+                          onClick={handleDepartmentClick}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed"
+                          required
+                        >
+                          <option value="">
+                            {!selectedFacultyId 
+                              ? "เลือกคณะก่อน" 
+                              : availableDepartments.length === 0
+                              ? "ไม่มีสาขาในคณะนี้"
+                              : "เลือกสาขาวิชา"}
+                          </option>
+                          {availableDepartments.map((department) => (
+                            <option key={department.id} value={department.id}>
+                              {department.name} ({department.degree})
+                            </option>
+                          ))}
+                        </select>
+                        {selectedFacultyId && availableDepartments.length > 0 && (
+                          <p className="mt-1 text-xs text-gray-500">
+                            มี {availableDepartments.length} สาขาในคณะนี้
+                          </p>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   {/* ตำแหน่งวิชาการ */}
@@ -618,8 +816,6 @@ export default function AdminRegistrations() {
                       <option value="ผู้ช่วยศาสตราจารย์">ผู้ช่วยศาสตราจารย์</option>
                       <option value="รองศาสตราจารย์">รองศาสตราจารย์</option>
                       <option value="ศาสตราจารย์">ศาสตราจารย์</option>
-                      <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
-                      <option value="นักศึกษา">นักศึกษา</option>
                     </select>
                   </div>
 
@@ -635,8 +831,30 @@ export default function AdminRegistrations() {
                       onChange={handleInputChange}
                       disabled={modalMode === 'view'}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                      placeholder="เช่น คณบดี หัวหน้าภาควิชา"
+                      placeholder="เช่น ประธานหลักสูตร, รองคณบดี, คณบดี"
                     />
+                  </div>
+
+                  {/* สิทธิ์ในการใช้งานระบบ */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      สิทธิ์ในการใช้งานระบบ
+                    </label>
+                    <select
+                      name="role"
+                      value={formData.role}
+                      onChange={handleInputChange}
+                      disabled={modalMode === 'view'}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                      required
+                    >
+                      <option value="">เลือกบทบาท</option>
+                      {roles.map((role) => (
+                        <option key={role.value} value={role.value}>
+                          {role.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
