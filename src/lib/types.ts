@@ -50,6 +50,7 @@ export const prefixOptions = [
 
 // Academic positions for UI
 export const academicPositions = [
+  { value: 'เจ้าหน้าที่' as const, label: 'เจ้าหน้าที่' },
   { value: 'อาจารย์' as const, label: 'อาจารย์' },
   { value: 'ผู้ช่วยศาสตราจารย์' as const, label: 'ผู้ช่วยศาสตราจารย์' },
   { value: 'รองศาสตราจารย์' as const, label: 'รองศาสตราจารย์' },

@@ -379,7 +379,7 @@ export default function RegistrationForm() {
                 {/* คณะ */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    คณะ <span className="text-red-500">*</span>
+                    คณะ/หน่วยงาน <span className="text-red-500">*</span>
                   </label>
                   <Select 
                     onValueChange={handleFacultyChange}
@@ -406,7 +406,7 @@ export default function RegistrationForm() {
                 {/* สาขาวิชา */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    สาขาวิชา <span className="text-red-500">*</span>
+                    สาขาวิชา/ฝ่าย <span className="text-red-500">*</span>
                   </label>
                   <Select 
                     onValueChange={handleDepartmentChange}
