@@ -180,17 +180,32 @@ export default function RegistrationForm() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              ระบบลงทะเบียนเข้าใช้ระบบสารสนเทศฐานข้อมูลหลักสูตร (CISA)
-            </h1>
-            <p className="text-gray-600">
-              กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง
-            </p>
-          </div>
-        </div>
+       {/* Header */}
+<div className="text-center mb-10">
+  <div className="bg-gradient-to-r from-blue-50 via-white to-blue-50 p-8 rounded-2xl shadow-md border border-gray-200">
+
+ {/* Logo */}
+    <div className="flex justify-center mb-4">
+      <img 
+        src="/100.png" 
+        alt="มหาวิทยาลัยราชภัฏมหาสารคาม Logo" 
+        className="h-24 md:h-32 lg:h-40 w-auto object-contain"
+      />
+    </div>
+
+
+    <h1 className="text-3xl md:text-4xl font-extrabold text-blue-800 mb-3">
+      ระบบลงทะเบียนเข้าใช้ระบบสารสนเทศฐานข้อมูลหลักสูตร (CISA) 
+    </h1>
+    <h2 className="text-lg md:text-xl font-semibold text-gray-700 mb-4">
+      มหาวิทยาลัยราชภัฏมหาสารคาม
+    </h2>
+    <p className="text-gray-600 text-sm md:text-base">
+      กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง
+    </p>
+  </div>
+</div>
+
 
         {/* Status Message */}
         {submitStatus.type && (
