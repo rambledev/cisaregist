@@ -8,7 +8,8 @@ import {
   registrationSchema,
   prefixOptions,
   academicPositions,
-  roles
+  roles,
+  consentText
 } from '@/lib/types'
 import {
   Select,
@@ -54,10 +55,17 @@ export default function RegistrationForm() {
     handleSubmit,
     setValue,
     reset,
+    watch,
     formState: { errors }
   } = useForm<RegistrationFormData>({
-    resolver: zodResolver(registrationSchema)
+    resolver: zodResolver(registrationSchema),
+    defaultValues: {
+      consentGiven: false
+    }
   })
+
+  // Watch consent checkbox
+  const consentGiven = watch('consentGiven')
 
   // ดึงข้อมูลคณะเมื่อ component mount
   useEffect(() => {
@@ -542,6 +550,45 @@ export default function RegistrationForm() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* ส่วน PDPA Consent */}
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                นโยบายความเป็นส่วนตัว
+              </h2>
+              
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                  {consentText}
+                </p>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <input
+                  {...register('consentGiven')}
+                  type="checkbox"
+                  id="consentGiven"
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor="consentGiven" className="text-sm text-gray-700 cursor-pointer">
+                  ข้าพเจ้ายอมรับนโยบายความเป็นส่วนตัวและข้อกำหนดการใช้งาน{' '}
+                  <span className="text-red-500">*</span>
+                </label>
+              </div>
+              
+              {errors.consentGiven && (
+                <p className="mt-2 text-sm text-red-600">{errors.consentGiven.message}</p>
+              )}
+              
+              {consentGiven && (
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <p className="text-sm text-green-700">
+                    ขอบคุณที่ยอมรับนโยบายความเป็นส่วนตัว
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Submit Button */}
