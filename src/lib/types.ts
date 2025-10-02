@@ -6,8 +6,12 @@ export const registrationSchema = z.object({
   prefix: z.enum(['นาย', 'นาง', 'นางสาว']),
   firstNameTh: z.string().min(1, 'กรุณากรอกชื่อภาษาไทย'),
   lastNameTh: z.string().min(1, 'กรุณากรอกนามสกุลภาษาไทย'),
-  firstNameEn: z.string().min(1, 'กรุณากรอกชื่อภาษาอังกฤษ'),
-  lastNameEn: z.string().min(1, 'กรุณากรอกนามสกุลภาษาอังกฤษ'),
+  firstNameEn: z.string()
+    .min(1, 'กรุณากรอกชื่อภาษาอังกฤษ')
+    .regex(/^[a-zA-Z\s]+$/, 'กรุณากรอกภาษาอังกฤษเท่านั้น'),
+  lastNameEn: z.string()
+    .min(1, 'กรุณากรอกนามสกุลภาษาอังกฤษ')
+    .regex(/^[a-zA-Z\s]+$/, 'กรุณากรอกภาษาอังกฤษเท่านั้น'),
   nationalId: z.string()
     .length(13, 'เลขบัตรประชาชนต้องมี 13 หลัก')
     .regex(/^\d+$/, 'เลขบัตรประชาชนต้องเป็นตัวเลขเท่านั้น'),
@@ -37,7 +41,7 @@ export const registrationSchema = z.object({
     'เจ้าหน้าที่ของสาขาวิชา'
   ]),
   
-  // เพิ่มฟิลด์ PDPA Consent
+  // PDPA Consent
   consentGiven: z.boolean().refine((val) => val === true, {
     message: 'กรุณายอมรับนโยบายความเป็นส่วนตัวและข้อกำหนดการใช้งาน'
   })
