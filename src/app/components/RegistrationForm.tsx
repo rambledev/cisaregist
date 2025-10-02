@@ -194,7 +194,7 @@ export default function RegistrationForm() {
     </div>
 
 
-    <h1 className="text-3xl md:text-4xl font-extrabold text-blue-800 mb-3">
+    <h1 className="text-2xl md:text-2xl font-extrabold text-blue-800 mb-3">
       ระบบลงทะเบียนเข้าใช้ระบบสารสนเทศฐานข้อมูลหลักสูตร (CISA) 
     </h1>
     <h2 className="text-lg md:text-xl font-semibold text-gray-700 mb-4">
