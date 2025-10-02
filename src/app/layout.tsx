@@ -8,9 +8,9 @@ export const metadata: Metadata = {
   title: 'ระบบลงทะเบียน CISA มหาวิทยาลัยราชภัฏมหาสารคาม',
   description: 'ระบบลงทะเบียนสำหรับองค์กร CISA มหาวิทยาลัยราชภัฏมหาสารคาม',
   icons: {
-    icon: "/100.svg",       // ไอคอนหลัก
-    shortcut: "/100.svg",   // สำหรับ browser เก่า
-    apple: "/100.svg",      // สำหรับ iOS
+    icon: "/100.png",       // ไอคอนหลัก
+    shortcut: "/100.png",   // สำหรับ browser เก่า
+    apple: "/100.png",      // สำหรับ iOS
   },
 }
 
