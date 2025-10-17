@@ -42,6 +42,7 @@ export default function RegistrationForm() {
     message: string
   }>({ type: null, message: '' })
   const [selectedRole, setSelectedRole] = useState<string>('')
+  const [selectedRole2, setSelectedRole2] = useState<string>('');
   
   // States สำหรับคณะและสาขา
   const [faculties, setFaculties] = useState<Faculty[]>([])
@@ -184,6 +185,11 @@ export default function RegistrationForm() {
     setSelectedRole(value)
     setValue('role', value as RegistrationFormData['role'])
   }
+
+  const handleRole2Change = (value: string) => {
+  setSelectedRole2(value);
+  setValue('role2', value as RegistrationFormData['role2']);
+};
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -550,6 +556,38 @@ export default function RegistrationForm() {
                   </div>
                 )}
               </div>
+
+{/* ตัวเลือกบทบาทที่ 2 (ไม่บังคับ) */}
+<div className="mt-4">
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    บทบาทที่ 2 (ถ้ามี)
+  </label>
+  <Select onValueChange={handleRole2Change}>
+    <SelectTrigger className="w-full">
+      <SelectValue placeholder="เลือกบทบาทที่ 2 (ถ้ามี)" />
+    </SelectTrigger>
+    <SelectContent>
+      {roles.map((role) => (
+        <SelectItem key={role.value} value={role.value}>
+          <div className="flex flex-col">
+            <span className="font-medium">{role.label}</span>
+          </div>
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+
+  {/* แสดงบทบาทที่ 2 ที่เลือก */}
+  {selectedRole2 && (
+    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+      <p className="text-sm text-gray-700">
+        <span className="font-medium">บทบาทที่ 2:</span> {selectedRole2}
+      </p>
+    </div>
+  )}
+</div>
+
+
             </div>
 
             {/* ส่วน PDPA Consent */}

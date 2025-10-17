@@ -14,10 +14,10 @@ model Admin {
   email     String    @unique
   name      String
   role      String    @default("admin")
-  isActive  Boolean   @default(true) @map("is_active")
-  lastLogin DateTime? @map("last_login") @db.Timestamp(6)
   createdAt DateTime  @default(now()) @map("createdAt")
   updatedAt DateTime  @updatedAt @map("updatedAt")
+  isActive  Boolean   @default(true) @map("is_active")
+  lastLogin DateTime? @map("last_login") @db.Timestamp(6)
 
   @@map("cisa_admins")
 }
@@ -42,7 +42,6 @@ model Department {
   specializations String[]
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  
   faculty         Faculty  @relation(fields: [facultyId], references: [id], onDelete: Cascade)
 
   @@map("cisa_departments")
@@ -63,32 +62,29 @@ model Registration {
   department             String
   academicPosition       String
   administrativePosition String?
-  role                   String
   status                 String   @default("inactive")
-  
-  // เพิ่มฟิลด์สำหรับ PDPA
-  consentGiven           Boolean  @default(true)
-  consentDate            DateTime @default(now())
-  consentVersion         String   @default("1.0")
-  
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
+  role                   String
+  consentDate            DateTime @default(now())
+  consentGiven           Boolean  @default(true)
+  consentVersion         String   @default("1.0")
+  role2                  String?
 
   @@map("cisa_registrations")
 }
 
-// เพิ่ม model ใหม่สำหรับ Access Log
 model AccessLog {
-  id          String   @id @default(cuid())
-  adminId     String?  @map("admin_id")
-  adminEmail  String?  @map("admin_email")
-  action      String
-  targetId    String?  @map("target_id")
-  reason      String?
-  ipAddress   String?  @map("ip_address")
-  userAgent   String?  @map("user_agent")
-  timestamp   DateTime @default(now())
-  
+  id         String   @id @default(cuid())
+  adminId    String?  @map("admin_id")
+  adminEmail String?  @map("admin_email")
+  action     String
+  targetId   String?  @map("target_id")
+  reason     String?
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  timestamp  DateTime @default(now())
+
   @@index([adminId])
   @@index([action])
   @@index([timestamp])

@@ -9,6 +9,8 @@ export function encryptNationalId(nationalId: string): string {
     throw new Error('ENCRYPTION_KEY is not set')
   }
   
+  console.log('Encrypting national ID:', nationalId)
+  
   const iv = crypto.randomBytes(16)
   const cipher = crypto.createCipheriv(
     ALGORITHM,
@@ -22,7 +24,9 @@ export function encryptNationalId(nationalId: string): string {
   const authTag = cipher.getAuthTag()
   
   // รวม iv + authTag + encrypted data
-  return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted
+  const encryptedData = iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted
+  console.log('Encrypted national ID:', encryptedData)
+  return encryptedData
 }
 
 export function decryptNationalId(encryptedData: string): string {
@@ -30,9 +34,12 @@ export function decryptNationalId(encryptedData: string): string {
     throw new Error('ENCRYPTION_KEY is not set')
   }
   
+  console.log('Decrypting national ID:', encryptedData)
+  
   try {
     const parts = encryptedData.split(':')
     if (parts.length !== 3) {
+      console.error('Invalid encrypted data format')
       throw new Error('Invalid encrypted data format')
     }
     
@@ -51,6 +58,7 @@ export function decryptNationalId(encryptedData: string): string {
     let decrypted = decipher.update(encrypted, 'hex', 'utf8')
     decrypted += decipher.final('utf8')
     
+    console.log('Decrypted national ID:', decrypted)
     return decrypted
   } catch (error) {
     console.error('Decryption error:', error)

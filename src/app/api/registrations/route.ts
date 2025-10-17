@@ -65,6 +65,7 @@ export async function POST(request: Request) {
         academicPosition: validatedData.academicPosition,
         administrativePosition: validatedData.administrativePosition || null,
         role: validatedData.role,
+        role2: validatedData.role2 || null, // เพิ่ม role2
         status: 'pending',
         consentGiven: true, // ผู้ใช้ยินยอมเมื่อลงทะเบียน
         consentDate: new Date(),
@@ -127,6 +128,7 @@ export async function GET(request: Request) {
         academicPosition: true,
         administrativePosition: true,
         role: true,
+        role2: true, // เพิ่ม role2
         status: true,
         createdAt: true,
         updatedAt: true,

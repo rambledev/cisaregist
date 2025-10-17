@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
         nationalId: true,
         prefix: true,
         role: true,
+        role2: true,
         status: true,
         createdAt: true,
         updatedAt: true,

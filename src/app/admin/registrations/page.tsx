@@ -30,6 +30,7 @@ interface Registration {
   academicPosition: string
   administrativePosition?: string
   role: string
+  role2: string
   nationalId: string
   prefix: string
   status: string
@@ -49,6 +50,7 @@ interface RegistrationForm {
   academicPosition: string
   administrativePosition: string
   role: string
+  role2: string
   nationalId: string
   prefix: string
 }
@@ -80,6 +82,7 @@ const initialFormData: RegistrationForm = {
   academicPosition: '',
   administrativePosition: '',
   role: '',
+  role2: '',
   nationalId: '',
   prefix: ''
 }
@@ -140,6 +143,7 @@ export default function AdminRegistrations() {
       const response = await fetch('/api/admin/registrations')
       if (response.ok) {
         const data = await response.json()
+        console.log('Fetched registrations:', data.registrations) // Debug log
         setRegistrations(data.registrations || [])
         
         // Extract unique faculties and roles for filters
@@ -215,6 +219,10 @@ export default function AdminRegistrations() {
       setAvailableDepartments([])
       setShowDepartmentWarning(false)
     } else if (registration) {
+      // Debug: log registration data
+      console.log('Registration data:', registration)
+      console.log('Role2 value:', registration.role2)
+      
       setFormData({
         firstNameTh: registration.firstNameTh,
         lastNameTh: registration.lastNameTh,
@@ -227,6 +235,7 @@ export default function AdminRegistrations() {
         academicPosition: registration.academicPosition,
         administrativePosition: registration.administrativePosition || '',
         role: registration.role,
+        role2: registration.role2 || '',
         nationalId: registration.nationalId,
         prefix: registration.prefix
       })
@@ -836,26 +845,68 @@ export default function AdminRegistrations() {
                   </div>
 
                   {/* สิทธิ์ในการใช้งานระบบ */}
-                  <div className="md:col-span-2">
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       สิทธิ์ในการใช้งานระบบ
                     </label>
-                    <select
-                      name="role"
-                      value={formData.role}
-                      onChange={handleInputChange}
-                      disabled={modalMode === 'view'}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                      required
-                    >
-                      <option value="">เลือกบทบาท</option>
-                      {roles.map((role) => (
-                        <option key={role.value} value={role.value}>
-                          {role.label}
-                        </option>
-                      ))}
-                    </select>
+                    {modalMode === 'view' ? (
+                      <input
+                        type="text"
+                        value={roles.find(r => r.value === formData.role)?.label || formData.role}
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                      />
+                    ) : (
+                      <select
+                        name="role"
+                        value={formData.role}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      >
+                        <option value="">เลือกบทบาท</option>
+                        {roles.map((role) => (
+                          <option key={role.value} value={role.value}>
+                            {role.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
+
+                  {/* สิทธิ์ในการใช้งานระบบ (บทบาทที่ 2) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      สิทธิ์ในการใช้งานระบบ (บทบาทที่ 2)
+                    </label>
+                    {modalMode === 'view' ? (
+                      <input
+                        type="text"
+                        value={
+                          formData.role2 
+                            ? (roles.find(r => r.value === formData.role2)?.label || formData.role2) 
+                            : 'ไม่มี'
+                        }
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                      />
+                    ) : (
+                      <select
+                        name="role2"
+                        value={formData.role2 || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">เลือกบทบาทที่ 2 (ถ้ามี)</option>
+                        {roles.map((role) => (
+                          <option key={role.value} value={role.value}>
+                            {role.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  
                 </div>
 
                 {/* Form Actions */}
