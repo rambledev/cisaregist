@@ -9,14 +9,14 @@ export async function POST(request: Request) {
     const body = await request.json()
     console.log('Received registration data:', body)
     
-    // Validate data with Zod
+    // ✅ ตรวจสอบความถูกต้องของข้อมูลด้วย Zod
     const validatedData = registrationSchema.parse(body)
     console.log('Validated data:', validatedData)
     
-    // เข้ารหัสเลขบัตรประชาชน
+    // ✅ เข้ารหัสเลขบัตรประชาชน
     const encryptedNationalId = encryptNationalId(validatedData.nationalId)
     
-    // ตรวจสอบว่ามีเลขบัตรประชาชนหรืออีเมลซ้ำหรือไม่
+    // ✅ ตรวจสอบว่าเลขบัตรหรืออีเมลซ้ำหรือไม่
     const allRegistrations = await prisma.registration.findMany({
       select: {
         id: true,
@@ -25,7 +25,6 @@ export async function POST(request: Request) {
       }
     })
     
-    // ถอดรหัสและเปรียบเทียบ
     for (const reg of allRegistrations) {
       try {
         const decryptedId = decryptNationalId(reg.nationalId)
@@ -37,10 +36,9 @@ export async function POST(request: Request) {
         }
       } catch (error) {
         console.error('Error decrypting national ID for comparison:', error)
-        // ถ้าถอดรหัสไม่ได้ ข้ามไป
         continue
       }
-      
+
       if (reg.email === validatedData.email) {
         return NextResponse.json(
           { error: 'อีเมลนี้ได้ลงทะเบียนแล้ว' },
@@ -48,8 +46,8 @@ export async function POST(request: Request) {
         )
       }
     }
-    
-    // สร้างการลงทะเบียนใหม่ พร้อมเข้ารหัสเลขบัตร
+
+    // ✅ บันทึกข้อมูลการลงทะเบียนใหม่
     const registration = await prisma.registration.create({
       data: {
         prefix: validatedData.prefix,
@@ -61,11 +59,11 @@ export async function POST(request: Request) {
         email: validatedData.email,
         phoneNumber: validatedData.phoneNumber,
         faculty: validatedData.faculty,
-        department: validatedData.department,
+        department: validatedData.department ?? null, // ✅ แก้ตรงนี้
         academicPosition: validatedData.academicPosition,
-        administrativePosition: validatedData.administrativePosition || null,
+        administrativePosition: validatedData.administrativePosition ?? null,
         role: validatedData.role,
-        role2: validatedData.role2 || null, // เพิ่ม role2
+        role2: validatedData.role2 ?? null, // ✅ เพิ่ม role2 แบบปลอดภัย
         status: 'pending',
         consentGiven: true, // ผู้ใช้ยินยอมเมื่อลงทะเบียน
         consentDate: new Date(),
@@ -83,10 +81,10 @@ export async function POST(request: Request) {
         sequence: registration.sequence
       }
     }, { status: 201 })
-    
+
   } catch (error) {
     console.error('Registration error:', error)
-    
+
     if (error instanceof ZodError) {
       console.error('Zod validation errors:', error.issues)
       return NextResponse.json(
@@ -94,7 +92,7 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-    
+
     return NextResponse.json(
       { error: 'เกิดข้อผิดพลาดในระบบ' },
       { status: 500 }
@@ -104,12 +102,14 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    // ดึงข้อมูล IP และ User Agent
-    const ipAddress = request.headers.get('x-forwarded-for') || 
-                      request.headers.get('x-real-ip') || 
-                      'unknown'
+    // ✅ ดึงข้อมูล IP และ User Agent
+    const ipAddress =
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      'unknown'
     const userAgent = request.headers.get('user-agent') || 'unknown'
     
+    // ✅ ดึงข้อมูลผู้ลงทะเบียนทั้งหมด
     const registrations = await prisma.registration.findMany({
       orderBy: { sequence: 'asc' },
       select: {
@@ -128,40 +128,40 @@ export async function GET(request: Request) {
         academicPosition: true,
         administrativePosition: true,
         role: true,
-        role2: true, // เพิ่ม role2
+        role2: true,
         status: true,
         createdAt: true,
         updatedAt: true,
       }
     })
 
-    // ถอดรหัสเลขบัตรประชาชนก่อนส่งกลับ
-    const decryptedRegistrations = registrations.map(reg => {
+    // ✅ ถอดรหัสเลขบัตรประชาชนก่อนส่งกลับ
+    const decryptedRegistrations = registrations.map((reg) => {
       try {
         return {
           ...reg,
-          nationalId: decryptNationalId(reg.nationalId)
+          nationalId: decryptNationalId(reg.nationalId),
         }
       } catch (error) {
         console.error('Error decrypting national ID:', error)
         return {
           ...reg,
-          nationalId: 'ERROR_DECRYPTING'
+          nationalId: 'ERROR_DECRYPTING',
         }
       }
     })
-    
-    // บันทึก Access Log
+
+    // ✅ บันทึก Access Log
     await prisma.accessLog.create({
       data: {
         action: 'VIEW_ALL_REGISTRATIONS',
         reason: 'Admin viewing all registrations',
         ipAddress: ipAddress,
         userAgent: userAgent,
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     })
-    
+
     return NextResponse.json(decryptedRegistrations)
   } catch (error) {
     console.error('Get registrations error:', error)

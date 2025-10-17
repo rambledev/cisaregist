@@ -435,7 +435,7 @@ export default function RegistrationForm() {
                 {/* สาขาวิชา */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    สาขาวิชา/ฝ่าย <span className="text-red-500">*</span>
+                    สาขาวิชา/ฝ่าย (ถ้าเป็นเจ้าหน้าที่สังกัดคณะไม่ต้องเลือก)
                   </label>
                   <Select 
                     onValueChange={handleDepartmentChange}

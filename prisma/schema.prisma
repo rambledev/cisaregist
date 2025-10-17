@@ -59,7 +59,7 @@ model Registration {
   email                  String   @unique
   phoneNumber            String
   faculty                String
-  department             String
+  department             String?  // 👈 เปลี่ยนเป็น optional เพื่อไม่บังคับให้กรอก
   academicPosition       String
   administrativePosition String?
   status                 String   @default("inactive")

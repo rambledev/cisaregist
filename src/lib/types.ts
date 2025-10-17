@@ -24,7 +24,7 @@ export const registrationSchema = z.object({
   
   // ข้อมูลการศึกษา/งาน
   faculty: z.string().min(1, 'กรุณาเลือกคณะ'),
-  department: z.string().min(1, 'กรุณากรอกสาขาวิชา'),
+  department: z.string().optional(), // เปลี่ยนเป็น optional ไม่บังคับ
   academicPosition: z.enum(['อาจารย์', 'ผู้ช่วยศาสตราจารย์', 'รองศาสตราจารย์', 'ศาสตราจารย์']),
   administrativePosition: z.string().optional(),
   
