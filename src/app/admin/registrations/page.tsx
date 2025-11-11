@@ -941,12 +941,382 @@ export default function AdminRegistrations() {
         )}
 
         {/* Existing Modal for Add/Edit/View */}
+        {/* Modal for Add/Edit/View */}
         {isModalOpen && (
-          // ... existing modal code remains the same ...
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            {/* ... existing modal content ... */}
+            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white">
+              {/* Modal Header */}
+              <div className="flex justify-between items-center mb-4 pb-3 border-b">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {modalMode === 'add' && 'เพิ่มข้อมูลการลงทะเบียนใหม่'}
+                  {modalMode === 'edit' && 'แก้ไขข้อมูลการลงทะเบียน'}
+                  {modalMode === 'view' && 'รายละเอียดข้อมูลการลงทะเบียน'}
+                </h3>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Personal Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Prefix */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      คำนำหน้า <span className="text-red-500">*</span>
+                    </label>
+                    {modalMode === 'view' ? (
+                      <p className="text-gray-900">{formData.prefix}</p>
+                    ) : (
+                      <select
+                        name="prefix"
+                        value={formData.prefix}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">เลือกคำนำหน้า</option>
+                        <option value="นาย">นาย</option>
+                        <option value="นาง">นาง</option>
+                        <option value="นางสาว">นางสาว</option>
+                        <option value="ผศ.">ผศ.</option>
+                        <option value="รศ.">รศ.</option>
+                        <option value="ศ.">ศ.</option>
+                        <option value="ดร.">ดร.</option>
+                        <option value="ผศ.ดร.">ผศ.ดร.</option>
+                        <option value="รศ.ดร.">รศ.ดร.</option>
+                        <option value="ศ.ดร.">ศ.ดร.</option>
+                      </select>
+                    )}
+                  </div>
+
+                  {/* National ID */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      เลขบัตรประชาชน <span className="text-red-500">*</span>
+                    </label>
+                    {modalMode === 'view' ? (
+                      <p className="text-gray-900">{formData.nationalId}</p>
+                    ) : (
+                      <input
+                        type="text"
+                        name="nationalId"
+                        value={formData.nationalId}
+                        onChange={handleInputChange}
+                        required
+                        maxLength={13}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    )}
+                  </div>
+
+                  {/* First Name TH */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      ชื่อ (ภาษาไทย) <span className="text-red-500">*</span>
+                    </label>
+                    {modalMode === 'view' ? (
+                      <p className="text-gray-900">{formData.firstNameTh}</p>
+                    ) : (
+                      <input
+                        type="text"
+                        name="firstNameTh"
+                        value={formData.firstNameTh}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    )}
+                  </div>
+
+                  {/* Last Name TH */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      นามสกุล (ภาษาไทย) <span className="text-red-500">*</span>
+                    </label>
+                    {modalMode === 'view' ? (
+                      <p className="text-gray-900">{formData.lastNameTh}</p>
+                    ) : (
+                      <input
+                        type="text"
+                        name="lastNameTh"
+                        value={formData.lastNameTh}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    )}
+                  </div>
+
+                  {/* First Name EN */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      ชื่อ (ภาษาอังกฤษ) <span className="text-red-500">*</span>
+                    </label>
+                    {modalMode === 'view' ? (
+                      <p className="text-gray-900">{formData.firstNameEn}</p>
+                    ) : (
+                      <input
+                        type="text"
+                        name="firstNameEn"
+                        value={formData.firstNameEn}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    )}
+                  </div>
+
+                  {/* Last Name EN */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      นามสกุล (ภาษาอังกฤษ) <span className="text-red-500">*</span>
+                    </label>
+                    {modalMode === 'view' ? (
+                      <p className="text-gray-900">{formData.lastNameEn}</p>
+                    ) : (
+                      <input
+                        type="text"
+                        name="lastNameEn"
+                        value={formData.lastNameEn}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    )}
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      อีเมล <span className="text-red-500">*</span>
+                    </label>
+                    {modalMode === 'view' ? (
+                      <p className="text-gray-900">{formData.email}</p>
+                    ) : (
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    )}
+                  </div>
+
+                  {/* Phone Number */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      เบอร์โทรศัพท์ <span className="text-red-500">*</span>
+                    </label>
+                    {modalMode === 'view' ? (
+                      <p className="text-gray-900">{formData.phoneNumber}</p>
+                    ) : (
+                      <input
+                        type="tel"
+                        name="phoneNumber"
+                        value={formData.phoneNumber}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    )}
+                  </div>
+
+                  {/* Faculty */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      คณะ <span className="text-red-500">*</span>
+                    </label>
+                    {modalMode === 'view' ? (
+                      <p className="text-gray-900">{formData.faculty}</p>
+                    ) : (
+                      <select
+                        value={selectedFacultyId}
+                        onChange={(e) => handleFacultyChange(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">เลือกคณะ</option>
+                        {facultiesData.map(faculty => (
+                          <option key={faculty.id} value={faculty.id}>
+                            {faculty.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  {/* Department */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      สาขาวิชา <span className="text-red-500">*</span>
+                    </label>
+                    {modalMode === 'view' ? (
+                      <p className="text-gray-900">{formData.department}</p>
+                    ) : (
+                      <div className="relative">
+                        <select
+                          value={availableDepartments.find(d => d.name === formData.department)?.id || ''}
+                          onChange={(e) => handleDepartmentChange(e.target.value)}
+                          onClick={handleDepartmentClick}
+                          required
+                          disabled={!selectedFacultyId}
+                          className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                            !selectedFacultyId ? 'bg-gray-100 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          <option value="">เลือกสาขาวิชา</option>
+                          {availableDepartments.map(dept => (
+                            <option key={dept.id} value={dept.id}>
+                              {dept.name}
+                            </option>
+                          ))}
+                        </select>
+                        {showDepartmentWarning && (
+                          <div className="absolute top-full left-0 mt-1 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700 flex items-center z-10">
+                            <AlertCircle className="h-4 w-4 mr-2" />
+                            กรุณาเลือกคณะก่อน
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Academic Position */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      ตำแหน่งวิชาการ <span className="text-red-500">*</span>
+                    </label>
+                    {modalMode === 'view' ? (
+                      <p className="text-gray-900">{formData.academicPosition}</p>
+                    ) : (
+                      <select
+                        name="academicPosition"
+                        value={formData.academicPosition}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">เลือกตำแหน่งวิชาการ</option>
+                        <option value="อาจารย์">อาจารย์</option>
+                        <option value="ผู้ช่วยศาสตราจารย์">ผู้ช่วยศาสตราจารย์</option>
+                        <option value="รองศาสตราจารย์">รองศาสตราจารย์</option>
+                        <option value="ศาสตราจารย์">ศาสตราจารย์</option>
+                      </select>
+                    )}
+                  </div>
+
+                  {/* Administrative Position */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      ตำแหน่งบริหาร
+                    </label>
+                    {modalMode === 'view' ? (
+                      <p className="text-gray-900">{formData.administrativePosition || '-'}</p>
+                    ) : (
+                      <input
+                        type="text"
+                        name="administrativePosition"
+                        value={formData.administrativePosition}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="ไม่มีก็ไม่ต้องระบุ"
+                      />
+                    )}
+                  </div>
+
+                  {/* Role */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      บทบาท <span className="text-red-500">*</span>
+                    </label>
+                    {modalMode === 'view' ? (
+                      <p className="text-gray-900">{formData.role}</p>
+                    ) : (
+                      <select
+                        name="role"
+                        value={formData.role}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">เลือกบทบาท</option>
+                        {roles.map((role, index) => (
+                          <option key={`role-${index}`} value={role.value}>
+                            {role.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  {/* Role 2 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      บทบาทที่ 2
+                    </label>
+                    {modalMode === 'view' ? (
+                      <p className="text-gray-900">{formData.role2 || '-'}</p>
+                    ) : (
+                      <select
+                        name="role2"
+                        value={formData.role2}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">ไม่มีบทบาทที่ 2</option>
+                        {roles.map((role, index) => (
+                          <option key={`role2-${index}`} value={role.value}>
+                            {role.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex justify-end space-x-3 pt-4 border-t mt-6">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md"
+                  >
+                    {modalMode === 'view' ? 'ปิด' : 'ยกเลิก'}
+                  </button>
+                  {modalMode !== 'view' && (
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center disabled:bg-gray-400"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          กำลังบันทึก...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          บันทึก
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
           </div>
         )}
+
+
+        
       </div>
     </AdminLayout>
   )
